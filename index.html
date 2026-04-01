@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nino Kitchen</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', serif;
+            background: #f9f5f0;
+            color: #2c2c2c;
+        }
+
+        .header {
+            background: #2c2c2c;
+            color: #d4af6a;
+            text-align: center;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { font-size: 28px; letter-spacing: 4px; }
+        .header p { font-size: 12px; color: #aaa; margin-top: 4px; letter-spacing: 2px; }
+
+        .categories {
+            display: flex;
+            overflow-x: auto;
+            padding: 12px;
+            gap: 8px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            scrollbar-width: none;
+        }
+
+        .categories::-webkit-scrollbar { display: none; }
+
+        .cat-btn {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #d4af6a;
+            background: transparent;
+            color: #2c2c2c;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .cat-btn.active {
+            background: #2c2c2c;
+            color: #d4af6a;
+        }
+
+        .menu-section { padding: 16px; }
+
+        .section-title {
+            font-size: 22px;
+            color: #d4af6a;
+            margin: 20px 0 12px;
+            font-style: italic;
+            border-bottom: 1px solid #e8e0d5;
+            padding-bottom: 8px;
+        }
+
+        .dish-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .dish-name { font-size: 14px; flex: 1; margin-right: 12px; line-height: 1.4; }
+        .dish-price { font-size: 15px; font-weight: bold; color: #d4af6a; white-space: nowrap; }
+
+        .booking-section {
+            display: none;
+            padding: 20px;
+        }
+
+        .booking-section.active { display: block; }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fff;
+        }
+
+        .book-btn {
+            width: 100%;
+            padding: 16px;
+            background: #2c2c2c;
+            color: #d4af6a;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            display: flex;
+            border-top: 1px solid #eee;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-size: 11px;
+            color: #888;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-btn.active { color: #d4af6a; }
+        .nav-btn span { display: block; font-size: 20px; }
+
+        .page { display: none; padding-bottom: 70px; }
+        .page.active { display: block; }
+
+        .contacts-section {
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .contacts-section h2 {
+            font-size: 24px;
+            color: #d4af6a;
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+
+        .contact-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .success-msg {
+            display: none;
+            background: #e8f5e9;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 16px;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>NINO</h1>
+    <p>KITCHEN & BAR</p>
+</div>
+
+<!-- СТРАНИЦА МЕНЮ -->
+<div class="page active" id="page-menu">
+    <div class="categories" id="categories"></div>
+    <div class="menu-section" id="menu-content"></div>
+</div>
+
+<!-- СТРАНИЦА БРОНИРОВАНИЕ -->
+<div class="page" id="page-booking">
+    <div style="padding: 24px 20px 8px; text-align:center;">
+        <h2 style="font-size:24px; color:#d4af6a; font-style:italic;">Забронировать стол</h2>
+    </div>
+    <div style="padding: 0 20px 80px;">
+        <div class="form-group">
+            <label>Ваше имя</label>
+            <input type="text" id="book-name" placeholder="Введите имя">
+        </div>
+        <div class="form-group">
+            <label>Номер телефона</label>
+            <input type="tel" id="book-phone" placeholder="+7 777 000 00 00">
+        </div>
+        <div class="form-group">
+            <label>Дата</label>
+            <input type="date" id="book-date">
+        </div>
+        <div class="form-group">
+            <label>Время</label>
+            <select id="book-time">
+                <option>12:00</option><option>13:00</option><option>14:00</option>
+                <option>15:00</option><option>16:00</option><option>17:00</option>
+                <option>18:00</option><option>19:00</option><option>20:00</option>
+                <option>21:00</option><option>22:00</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Количество гостей</label>
+            <select id="book-guests">
+                <option>1</option><option>2</option><option>3</option>
+                <option>4</option><option>5</option><option>6</option>
+                <option>7</option><option value="8+">8+</option>
+            </select>
+        </div>
+        <button class="book-btn" onclick="submitBooking()">ЗАБРОНИРОВАТЬ</button>
+        <div class="success-msg" id="success-msg">
+            ✅ Бронирование отправлено!<br>Мы свяжемся с вами для подтверждения.
+        </div>
+    </div>
+</div>
+
+<!-- СТРАНИЦА КОНТАКТЫ -->
+<div class="page" id="page-contacts">
+    <div class="contacts-section">
+        <h2>Контакты</h2>
+        <div class="contact-item">📍 Улица Акмешит, 1 блок В, 1 этаж</div>
+        <div class="contact-item">📞 +7 702 880 8000</div>
+        <div class="contact-item">🕐 Открываемся в 12:00</div>
+        <div class="contact-item">📱 Instagram: @nino.ast</div>
+    </div>
+</div>
+
+<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<div class="bottom-nav">
+    <button class="nav-btn active" id="nav-menu" onclick="showPage('menu')">
+        <span>🍽️</span>Меню
+    </button>
+    <button class="nav-btn" id="nav-booking" onclick="showPage('booking')">
+        <span>📅</span>Бронь
+    </button>
+    <button class="nav-btn" id="nav-contacts" onclick="showPage('contacts')">
+        <span>📞</span>Контакты
+    </button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const menu = {
+    "🥗 Стартеры": [
+        {name: "Баклажаны со страчателлой и соусом наршараб", price: 4100},
+        {name: "Крем из артишоков и трюфеля", price: 4700},
+        {name: "Крокеты с креветкой, сыром сулугуни и кремом из зелени", price: 5100},
+        {name: "Мусс из печеного перца с чатни из изюма и паприки", price: 4000},
+        {name: "Паштет из куриной печени с желе из шиповника и чатни из чернослива", price: 4100},
+    ],
+    "🥩 Raw": [
+        {name: "Карпаччо из говядины с кремом из шпината и трюфеля", price: 8100},
+        {name: "Крудо из целого дорадо с соусом из огурца и лайма", price: 9500},
+        {name: "Тартар из говядины с тартином из ржаного хлеба", price: 9500},
+    ],
+    "🫒 Закуски": [
+        {name: "Баклажаны алла пармиджано с ореховым соусом и гранатом", price: 4500},
+        {name: "Вителло тонато с печёным баклажаном и кинзой", price: 5300},
+        {name: "Долма с морепродуктами, копчёным мацони и наршараб", price: 6300},
+        {name: "Жареный сулугуни с маринованными персиками", price: 5250},
+        {name: "Фритто с мисто из креветок с соусом из цитрусов", price: 4600},
+    ],
+    "🥗 Салаты": [
+        {name: "Салат с креветкой, авокадо и огурцом", price: 8500},
+        {name: "Салат с томатами и бурратой", price: 7500},
+        {name: "Салат с хрустящим цыплёнком, ткемали и романо", price: 5800},
+    ],
+    "🍲 Супы": [
+        {name: "Буйабес с морепродуктами", price: 6100},
+    ],
+    "🍝 Паста": [
+        {name: "Казаречче с уткой конфи и томатами", price: 8200},
+        {name: "Ленивая лазанья с томлёной говядиной и сельдереем", price: 7100},
+        {name: "Лингвини с вонголе", price: 9200},
+        {name: "Паста качо-э-пепе", price: 5300},
+        {name: "Равиоли с сёмгой", price: 7800},
+        {name: "Паста с морепродуктами в соусе на основе креветок", price: 11000},
+    ],
+    "🔥 Горячее": [
+        {name: "Филе миньон с пюре из баклажан и перечным соусом", price: 13100},
+        {name: "Телячьи щёчки с пастой птитим качо э пепе", price: 8400},
+        {name: "Дорадо с томатами, оливками и каперсами", price: 9000},
+        {name: "Запечённый цыплёнок с грибами", price: 7200},
+        {name: "Лосось с кремом из брокколи и жёлтыми томатами", price: 7600},
+        {name: "Осьминог с картофельным пюре", price: 15300},
+        {name: "Говяжье ребро кальби с гратеном", price: 11000},
+        {name: "Бургер говяжий", price: 13500},
+        {name: "Томлёный ягнёнок с вишней и пюре из сельдерея", price: 10500},
+        {name: "Утка конфи с морковным пюре и мочёными ягодами", price: 9200},
+    ],
+    "🥩 Стейки": [
+        {name: "Рибай без кости", price: 19100},
+        {name: "Рибай на кости", price: 19100},
+        {name: "Стриплойн", price: 19100},
+    ],
+    "🍰 Десерты": [
+        {name: "Тарт с малиной и белым шоколадом", price: 4800},
+        {name: "Тирамису", price: 3500},
+        {name: "Фисташковый ганаш с грушей и гелем из лимона", price: 5100},
+        {name: "Шоколадный тарт с пеканом и солью мальдон", price: 4100},
+        {name: "Париж брест", price: 4800},
+        {name: "Ягодная тарелка 100гр", price: 10000},
+        {name: "Фруктовая тарелка", price: 25000},
+    ],
+    "🫕 Гарниры": [
+        {name: "Брокколи и цветная капуста в соусе баже", price: 2300},
+        {name: "Картофельное пюре", price: 1800},
+        {name: "Овощи гриль", price: 2400},
+    ],
+    "🍞 Хлеб": [
+        {name: "Бриошь", price: 1800},
+        {name: "Пури", price: 1400},
+        {name: "Тартин", price: 1500},
+    ],
+    "🇬🇪 Georgia Special": [
+        {name: "Ассорти солений", price: 5100},
+        {name: "Грузинские сыры", price: 5700},
+        {name: "Хинкали с говядиной", price: 4000},
+        {name: "Хинкали с бараниной", price: 4000},
+        {name: "Хинкали с сыром", price: 3100},
+        {name: "Хачапури по-Мегрельски", price: 6300},
+        {name: "Хачапури по-Аджарски", price: 6500},
+        {name: "Чашашули из говядины", price: 5600},
+        {name: "Чкмерули из курицы", price: 7500},
+    ],
+    "☕ Напитки": [
+        {name: "Капучино", price: 2100},
+        {name: "Латте", price: 2100},
+        {name: "Американо", price: 1800},
+        {name: "Эспрессо", price: 1600},
+        {name: "Чай Assam Meleng", price: 3200},
+        {name: "Чай ташкентский", price: 3400},
+        {name: "Berry mix б/а коктейль", price: 3100},
+        {name: "Вишня бузина лимонад", price: 2900},
+        {name: "Cola / Fanta / Sprite", price: 1900},
+        {name: "Borjomi", price: 2400},
+    ],
+};
+
+// Рендер категорий
+const catContainer = document.getElementById('categories');
+const menuContent = document.getElementById('menu-content');
+const categories = Object.keys(menu);
+let activeCategory = categories[0];
+
+function renderCategories() {
+    catContainer.innerHTML = '';
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-btn' + (cat === activeCategory ? ' active' : '');
+        btn.textContent = cat;
+        btn.onclick = () => {
+            activeCategory = cat;
+            renderCategories();
+            renderMenu();
+            document.getElementById(`section-${cat}`).scrollIntoView({behavior: 'smooth'});
+        };
+        catContainer.appendChild(btn);
+    });
+}
+
+function renderMenu() {
+    menuContent.innerHTML = '';
+    categories.forEach(cat => {
+        const section = document.createElement('div');
+        section.id = `section-${cat}`;
+        section.innerHTML = `<div class="section-title">${cat}</div>`;
+        menu[cat].forEach(dish => {
+            section.innerHTML += `
+                <div class="dish-card">
+                    <div class="dish-name">${dish.name}</div>
+                    <div class="dish-price">${dish.price.toLocaleString()} тг</div>
+                </div>`;
+        });
+        menuContent.appendChild(section);
+    });
+}
+
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    document.getElementById(`nav-${page}`).classList.add('active');
+}
+
+function submitBooking() {
+    const name = document.getElementById('book-name').value;
+    const phone = document.getElementById('book-phone').value;
+    const date = document.getElementById('book-date').value;
+    const time = document.getElementById('book-time').value;
+    const guests = document.getElementById('book-guests').value;
+
+    if (!name || !phone || !date) {
+        alert('Заполните все поля!');
+        return;
+    }
+
+    // Отправляем данные в бот
+    tg.sendData(JSON.stringify({
+        type: 'booking',
+        name, phone, date, time, guests
+    }));
+
+    document.getElementById('success-msg').style.display = 'block';
+}
+
+renderCategories();
+renderMenu();
+</script>
+</body>
+</html>
